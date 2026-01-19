@@ -100,6 +100,33 @@
     .bundle-items-table{width:100%;border-collapse:collapse}
     .bundle-items-table th,.bundle-items-table td{border-bottom:1px solid #e5e7eb;padding:8px 10px}
     .small-note{opacity:.75;font-size:12px}
+
+    /* Logout modal */
+    .modal-overlay{
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.45);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:2500;
+      padding:18px;
+    }
+    .modal-overlay.show{display:flex}
+
+    .modal{
+      background:white;
+      width:min(520px, 95vw);
+      border-radius:16px;
+      box-shadow:0 20px 60px rgba(0,0,0,.35);
+      padding:22px;
+    }
+    .modal h3{font-size:18px;color:#111827;margin-bottom:6px}
+    .modal p{font-size:14px;color:#6b7280;margin-bottom:18px;line-height:1.4}
+    .modal-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+    }
   </style>
 </head>
 <body>
@@ -118,7 +145,7 @@
   <div class="header">
     <h1>📊 PROMED — Inventory Tracker</h1>
     <p>Complete inventory management system</p>
-    <button class="logout" onclick="doLogout()">Logout</button>
+    <button class="logout" onclick="openLogoutModal()">Logout</button>
   </div>
 
   <div class="tabs">
@@ -128,7 +155,7 @@
     <button class="tab-btn" onclick="showTab(3)">📋 Payables</button>
   </div>
 
-  <!-- TAB 0 (same as before) -->
+  <!-- TAB 0 -->
   <div id="tab0" class="tab-content active">
     <h2>📦 Aggregated Inventory</h2>
     <p>Current inventory state</p>
@@ -157,7 +184,7 @@
     <div id="invStatus" class="status"></div>
   </div>
 
-  <!-- TAB 1 (NEW: dynamic nested bundles) -->
+  <!-- TAB 1 -->
   <div id="tab1" class="tab-content">
     <h2>🎁 Bundles</h2>
     <p>
@@ -192,7 +219,7 @@
     <div id="bunStatus" class="status"></div>
   </div>
 
-  <!-- TAB 2 (same as before) -->
+  <!-- TAB 2 -->
   <div id="tab2" class="tab-content">
     <h2>💰 Sales</h2>
     <p>Recent sales data</p>
@@ -221,7 +248,7 @@
     <div id="salesStatus" class="status"></div>
   </div>
 
-  <!-- TAB 3 (same as before) -->
+  <!-- TAB 3 -->
   <div id="tab3" class="tab-content">
     <h2>📋 Payables</h2>
     <p>Outstanding debts</p>
@@ -251,11 +278,24 @@
   </div>
 </div>
 
+<!-- Logout Modal -->
+<div id="logoutModal" class="modal-overlay" onclick="onLogoutOverlayClick(event)">
+  <div class="modal">
+    <h3>Logout?</h3>
+    <p>You’ll be returned to the login screen. Any unsaved inputs on this page will be lost.</p>
+    <div class="modal-actions">
+      <button class="btn gray" onclick="closeLogoutModal()">Cancel</button>
+      <button class="btn red" onclick="confirmLogout()">Logout</button>
+    </div>
+  </div>
+</div>
+
 <iframe name="submission_iframe" style="display:none"></iframe>
 <div id="toast" class="toast"></div>
 
 <script>
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyK6rSvhSdhPT_4Ahtbm9Moz6PP833fYUGRe7LY7cQQgPBdrIzxhiDaPst7H3Bei1YEYw/exec";
+  // ✅ PUT YOUR WEB APP /exec URL HERE
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw7xmJyX7VFoRMEH-3TaMStvgF2QD4v9dwc8G01CZ01tOKNGF6gccp1Ux6FCjfK_r2hLA/exec";
 
   function showToast(msg, type='success', ms=2500){
     const t = document.getElementById('toast');
@@ -276,13 +316,29 @@
     }
   }
 
-  function doLogout(){
-    if(confirm('Logout?')){
-      document.getElementById('loginScreen').style.display='flex';
-      document.getElementById('app').style.display='none';
-      document.getElementById('loginCode').value='';
-    }
+  // ✅ New logout modal flow
+  function openLogoutModal(){
+    document.getElementById('logoutModal').classList.add('show');
   }
+
+  function closeLogoutModal(){
+    document.getElementById('logoutModal').classList.remove('show');
+  }
+
+  function onLogoutOverlayClick(e){
+    if(e.target.id === 'logoutModal') closeLogoutModal();
+  }
+
+  function confirmLogout(){
+    closeLogoutModal();
+    document.getElementById('loginScreen').style.display='flex';
+    document.getElementById('app').style.display='none';
+    document.getElementById('loginCode').value='';
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape') closeLogoutModal();
+  });
 
   document.getElementById('loginCode').addEventListener('keypress', e => {
     if(e.key === 'Enter') doLogin();
@@ -301,14 +357,14 @@
       return `
         <tr>
           <td><button class="icon-btn" onclick="deleteRow(this)">✕</button></td>
-          <td><input type="text" placeholder="e.g. Stethoscope"></td>
-          <td><input type="text" placeholder="e.g. Cardio"></td>
+          <td><input type="text" placeholder="e.g. Littmann Classic III Stethoscope"></td>
+          <td><input type="text" placeholder="e.g. Stethoscopes"></td>
           <td><input type="number" class="qty" min="0" placeholder="0"></td>
           <td><input type="number" class="cost" min="0" step="0.01" placeholder="0.00"></td>
           <td><input type="number" class="price" min="0" step="0.01" placeholder="0.00"></td>
           <td class="computed tc">0.00</td>
           <td class="computed tr">0.00</td>
-          <td><input type="text" placeholder="notes"></td>
+          <td><input type="text" placeholder="Description / variant"></td>
         </tr>`;
     }
     if(type==='sales'){
@@ -424,21 +480,15 @@
       return;
     }
 
-    let iframe = document.querySelector('iframe[name="submission_iframe"]');
-    if(!iframe){
-      iframe = document.createElement('iframe');
-      iframe.name = 'submission_iframe';
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
-    }
-
     for(let i=0;i<rows.length;i++){
       postToScript_({ sheetName, row: rows[i] });
       await new Promise(r => setTimeout(r, 300));
     }
 
+    // Remove submitted rows so re-submits don't repeat them
     rowEls.forEach(tr => tr.remove());
 
+    // Ensure at least one row exists after submit
     const table = document.getElementById(tableId);
     const bodyId = table.dataset.body;
     const rowType = table.dataset.rowtype;
@@ -484,9 +534,9 @@
     tbody.insertAdjacentHTML('beforeend', `
       <tr class="bundle-head" data-bundle-id="${id}">
         <td><button class="icon-btn" onclick="deleteBundle('${id}')">✕</button></td>
-        <td><input type="text" placeholder="e.g. Basic Kit" class="bundle-name"></td>
+        <td><input type="text" placeholder="e.g. Student Diagnostic Kit" class="bundle-name"></td>
         <td><input type="number" min="0" step="0.01" placeholder="0.00" class="bundle-price"></td>
-        <td><input type="text" placeholder="notes" class="bundle-notes"></td>
+        <td><input type="text" placeholder="Description / variant" class="bundle-notes"></td>
         <td>
           <button class="btn gray" onclick="addBundleItem('${id}')">+ Add Item</button>
         </td>
@@ -504,8 +554,7 @@
                   <th style="width:140px">Qty</th>
                 </tr>
               </thead>
-              <tbody>
-              </tbody>
+              <tbody></tbody>
             </table>
             <div class="small-note" style="margin-top:8px">
               Tip: add as many items as you want for this bundle.
@@ -515,8 +564,7 @@
       </tr>
     `);
 
-    // start with one item row
-    addBundleItem(id);
+    addBundleItem(id); // start with one item row
   }
 
   function addBundleItem(bundleId){
@@ -524,7 +572,7 @@
     table.insertAdjacentHTML('beforeend', `
       <tr>
         <td><button class="icon-btn" onclick="deleteBundleItem(this)">✕</button></td>
-        <td><input type="text" placeholder="e.g. Stethoscope"></td>
+        <td><input type="text" placeholder="e.g. Littmann Classic III"></td>
         <td><input type="number" min="0" placeholder="1"></td>
       </tr>
     `);
@@ -545,7 +593,6 @@
     const items = document.querySelector(`tr.bundle-items-row[data-bundle-id="${bundleId}"]`);
     if(!head || !items) return;
 
-    // prevent deleting last bundle
     const totalBundles = document.querySelectorAll('tr.bundle-head').length;
     if(totalBundles <= 1){
       showToast("Can't delete the last bundle.", "error");
@@ -574,7 +621,6 @@
         if(meaningful) itemRows.push({ item, qty });
       });
 
-      // meaningful if bundle has name/price/notes OR any item meaningful
       const meaningfulBundle = name !== '' || price !== '' || notes !== '' || itemRows.length > 0;
       if(!meaningfulBundle) return;
 
@@ -600,20 +646,18 @@
       return;
     }
 
-    // Send:
-    // 1) Bundles Packages sheet (one row per bundle)
-    // 2) Bundle Items sheet (one row per item)
     let bundleRows = 0;
     let itemRows = 0;
 
     for(const b of bundles){
-      // Bundles Packages: Del, BundleName, Price, Notes, BundleID
+      // Bundles Packages sheet: ["", name, price, notes, bundleId]
       postToScript_({
         sheetName: "Bundles Packages",
         row: ["", b.name, b.price, b.notes, b.bundleId]
       });
       bundleRows++;
 
+      // Bundle Items sheet: ["", bundleId, item, qty]
       for(const it of b.items){
         postToScript_({
           sheetName: "Bundle Items",
@@ -625,7 +669,6 @@
       await new Promise(r => setTimeout(r, 300));
     }
 
-    // Clear bundles and reset to 1 bundle
     document.getElementById('bundleBody').innerHTML = '';
     addBundle();
 
