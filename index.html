@@ -34,18 +34,18 @@
     table{width:100%;border-collapse:collapse;font-size:13px}
     thead{background:linear-gradient(135deg,#667eea,#764ba2);color:white}
     th{padding:12px;text-align:left;font-weight:600;white-space:nowrap}
-    td{padding:10px 12px;border-bottom:1px solid #e0e0e0}
+    td{padding:10px 12px;border-bottom:1px solid #e0e0e0;vertical-align:top}
     tbody tr:hover{background:#f8f9ff}
     input,select,textarea{width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px}
     textarea{resize:vertical}
-
     .computed{background:#f0f9ff;font-weight:600;color:#0284c7}
 
     .btn{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px}
     .btn.green{background:#10b981}
     .btn.red{background:#ef4444}
+    .btn.gray{background:#6b7280}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
 
-    /* ✅ Buttons row: Add on left, Submit on far right */
     .actions{
       display:flex;
       align-items:center;
@@ -61,6 +61,45 @@
     .status.success{background:#d1fae5;color:#065f46;border:1px solid #10b981;display:block}
     .status.error{background:#fee2e2;color:#991b1b;border:1px solid #ef4444;display:block}
     .status.loading{background:#dbeafe;color:#1e40af;border:1px solid #3b82f6;display:block}
+
+    .toast{
+      position:fixed; right:18px; bottom:18px;
+      background:#111827; color:white;
+      padding:12px 14px; border-radius:10px;
+      box-shadow:0 10px 30px rgba(0,0,0,.25);
+      font-size:14px; font-weight:600;
+      display:none;
+      max-width:360px;
+      z-index:2000;
+    }
+    .toast.show{display:block}
+    .toast.success{background:#065f46}
+    .toast.error{background:#991b1b}
+
+    .icon-btn{
+      border:none;
+      background:#fee2e2;
+      color:#991b1b;
+      padding:8px 10px;
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:700;
+      line-height:1;
+      width:38px;
+    }
+    .icon-btn:hover{background:#fecaca}
+
+    /* Bundle nested styling */
+    .bundle-head{background:#f8fafc}
+    .bundle-items-row td{background:#ffffff}
+    .bundle-items-wrap{
+      border-left:4px solid #e5e7eb;
+      padding-left:12px;
+    }
+    .bundle-items-table th{background:#f3f4f6;color:#111827}
+    .bundle-items-table{width:100%;border-collapse:collapse}
+    .bundle-items-table th,.bundle-items-table td{border-bottom:1px solid #e5e7eb;padding:8px 10px}
+    .small-note{opacity:.75;font-size:12px}
   </style>
 </head>
 <body>
@@ -89,27 +128,20 @@
     <button class="tab-btn" onclick="showTab(3)">📋 Payables</button>
   </div>
 
-  <!-- TAB 0 -->
+  <!-- TAB 0 (same as before) -->
   <div id="tab0" class="tab-content active">
     <h2>📦 Aggregated Inventory</h2>
     <p>Current inventory state</p>
+
     <div class="table-wrap">
-      <table id="invTable">
+      <table id="invTable" data-body="invBody" data-rowtype="inv">
         <thead>
-          <tr><th>Item</th><th>Category</th><th>Qty</th><th>Cost (₵)</th><th>Price (₵)</th><th>Total Cost</th><th>Total Retail</th><th>Notes</th></tr>
-        </thead>
-        <tbody id="invBody">
           <tr>
-            <td><input type="text" placeholder="e.g. Stethoscope"></td>
-            <td><input type="text" placeholder="e.g. Cardio"></td>
-            <td><input type="number" class="qty" min="0" placeholder="0"></td>
-            <td><input type="number" class="cost" min="0" step="0.01" placeholder="0.00"></td>
-            <td><input type="number" class="price" min="0" step="0.01" placeholder="0.00"></td>
-            <td class="computed tc">0.00</td>
-            <td class="computed tr">0.00</td>
-            <td><input type="text" placeholder="notes"></td>
+            <th style="width:50px">Del</th>
+            <th>Item</th><th>Category</th><th>Qty</th><th>Cost (₵)</th><th>Price (₵)</th><th>Total Cost</th><th>Total Retail</th><th>Notes</th>
           </tr>
-        </tbody>
+        </thead>
+        <tbody id="invBody"></tbody>
       </table>
     </div>
 
@@ -118,73 +150,62 @@
         <button class="btn" onclick="addRow('invBody','inv')">+ Add</button>
       </div>
       <div class="actions-right">
-        <button class="btn green" onclick="submitSheet('Aggregated Inventory','invTable','invStatus','invBody','inv')">📤 Submit</button>
+        <button id="invSubmit" class="btn green" onclick="submitSheet('Aggregated Inventory','invTable','invStatus','invSubmit')">📤 Submit</button>
       </div>
     </div>
 
     <div id="invStatus" class="status"></div>
   </div>
 
-  <!-- TAB 1 -->
+  <!-- TAB 1 (NEW: dynamic nested bundles) -->
   <div id="tab1" class="tab-content">
     <h2>🎁 Bundles</h2>
     <p>
-      Bundle pricing and contents. In <b>Items</b>, enter one line per item like:<br>
-      <span style="opacity:.8">Stethoscope x1<br>BP machine x1<br>Thermometer x2</span>
+      Create bundles with any number of items.<br>
+      <span class="small-note">Each bundle has its own “Add Item”. Submitting sends bundle + items to Google Sheets.</span>
     </p>
 
     <div class="table-wrap">
-      <table id="bunTable">
+      <table id="bundleTable">
         <thead>
           <tr>
-            <th>Bundle</th>
-            <th>Price (₵)</th>
-            <th>Items (one per line: Item xQty)</th>
+            <th style="width:50px">Del</th>
+            <th>Bundle Name</th>
+            <th>Bundle Price (₵)</th>
             <th>Notes</th>
+            <th style="width:140px">Actions</th>
           </tr>
         </thead>
-        <tbody id="bunBody">
-          <tr>
-            <td><input type="text" placeholder="e.g. Basic Kit"></td>
-            <td><input type="number" min="0" step="0.01" placeholder="0.00"></td>
-            <td><textarea rows="4" placeholder="Stethoscope x1&#10;BP machine x1&#10;Thermometer x2"></textarea></td>
-            <td><input type="text"></td>
-          </tr>
-        </tbody>
+        <tbody id="bundleBody"></tbody>
       </table>
     </div>
 
     <div class="actions">
       <div class="actions-left">
-        <button class="btn" onclick="addRow('bunBody','bun')">+ Add</button>
+        <button class="btn" onclick="addBundle()">+ Add Bundle</button>
       </div>
       <div class="actions-right">
-        <button class="btn green" onclick="submitSheet('Bundles Packages','bunTable','bunStatus','bunBody','bun')">📤 Submit</button>
+        <button id="bundleSubmit" class="btn green" onclick="submitBundles('bunStatus','bundleSubmit')">📤 Submit</button>
       </div>
     </div>
 
     <div id="bunStatus" class="status"></div>
   </div>
 
-  <!-- TAB 2 -->
+  <!-- TAB 2 (same as before) -->
   <div id="tab2" class="tab-content">
     <h2>💰 Sales</h2>
     <p>Recent sales data</p>
 
     <div class="table-wrap">
-      <table id="salesTable">
-        <thead><tr><th>Date</th><th>Item</th><th>Type</th><th>Qty</th><th>Price (₵)</th><th>Payment</th><th>Notes</th></tr></thead>
-        <tbody id="salesBody">
+      <table id="salesTable" data-body="salesBody" data-rowtype="sales">
+        <thead>
           <tr>
-            <td><input type="date"></td>
-            <td><input type="text"></td>
-            <td><select><option>Single</option><option>Bundle</option></select></td>
-            <td><input type="number" min="0" placeholder="0"></td>
-            <td><input type="number" min="0" step="0.01" placeholder="0.00"></td>
-            <td><select><option>Cash</option><option>MoMo</option><option>Transfer</option></select></td>
-            <td><input type="text"></td>
+            <th style="width:50px">Del</th>
+            <th>Date</th><th>Item</th><th>Type</th><th>Qty</th><th>Price (₵)</th><th>Payment</th><th>Notes</th>
           </tr>
-        </tbody>
+        </thead>
+        <tbody id="salesBody"></tbody>
       </table>
     </div>
 
@@ -193,32 +214,27 @@
         <button class="btn" onclick="addRow('salesBody','sales')">+ Add</button>
       </div>
       <div class="actions-right">
-        <button class="btn green" onclick="submitSheet('Sales Snapshot','salesTable','salesStatus','salesBody','sales')">📤 Submit</button>
+        <button id="salesSubmit" class="btn green" onclick="submitSheet('Sales Snapshot','salesTable','salesStatus','salesSubmit')">📤 Submit</button>
       </div>
     </div>
 
     <div id="salesStatus" class="status"></div>
   </div>
 
-  <!-- TAB 3 -->
+  <!-- TAB 3 (same as before) -->
   <div id="tab3" class="tab-content">
     <h2>📋 Payables</h2>
     <p>Outstanding debts</p>
 
     <div class="table-wrap">
-      <table id="payTable">
-        <thead><tr><th>Creditor</th><th>Amount (₵)</th><th>Reason</th><th>Items</th><th>Due</th><th>Status</th><th>Notes</th></tr></thead>
-        <tbody id="payBody">
+      <table id="payTable" data-body="payBody" data-rowtype="pay">
+        <thead>
           <tr>
-            <td><input type="text"></td>
-            <td><input type="number" min="0" step="0.01" placeholder="0.00"></td>
-            <td><input type="text"></td>
-            <td><input type="text"></td>
-            <td><input type="date"></td>
-            <td><select><option>Pending</option><option>Paid</option><option>Overdue</option></select></td>
-            <td><input type="text"></td>
+            <th style="width:50px">Del</th>
+            <th>Creditor</th><th>Amount (₵)</th><th>Reason</th><th>Items</th><th>Due</th><th>Status</th><th>Notes</th>
           </tr>
-        </tbody>
+        </thead>
+        <tbody id="payBody"></tbody>
       </table>
     </div>
 
@@ -227,7 +243,7 @@
         <button class="btn" onclick="addRow('payBody','pay')">+ Add</button>
       </div>
       <div class="actions-right">
-        <button class="btn green" onclick="submitSheet('Payables Debts','payTable','payStatus','payBody','pay')">📤 Submit</button>
+        <button id="paySubmit" class="btn green" onclick="submitSheet('Payables Debts','payTable','payStatus','paySubmit')">📤 Submit</button>
       </div>
     </div>
 
@@ -235,13 +251,20 @@
   </div>
 </div>
 
-<!-- Hidden iframe used for POST submissions (bypasses CORS) -->
 <iframe name="submission_iframe" style="display:none"></iframe>
+<div id="toast" class="toast"></div>
 
 <script>
-  // ✅ Your Apps Script Web App /exec URL
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFJMou7P7x4Iy5gzLIpGBO5ifOtoNnUvCzpBjDJ1TwHAvcLbdR3q0efolsXgCQR_7l6A/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyK6rSvhSdhPT_4Ahtbm9Moz6PP833fYUGRe7LY7cQQgPBdrIzxhiDaPst7H3Bei1YEYw/exec";
 
+  function showToast(msg, type='success', ms=2500){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + (type === 'error' ? 'error' : 'success');
+    setTimeout(()=>{ t.className = 'toast'; }, ms);
+  }
+
+  // Login
   function doLogin(){
     const c = document.getElementById('loginCode').value;
     if(c === 'promedLogin'){
@@ -272,138 +295,103 @@
     document.querySelectorAll('.tab-btn')[i].classList.add('active');
   }
 
-  // Auto compute totals for inventory
-  document.getElementById('invBody').addEventListener('input', e => {
-    if(e.target.classList.contains('qty') || e.target.classList.contains('cost') || e.target.classList.contains('price')){
-      const r = e.target.closest('tr');
-      const q = parseFloat(r.querySelector('.qty').value) || 0;
-      const c = parseFloat(r.querySelector('.cost').value) || 0;
-      const p = parseFloat(r.querySelector('.price').value) || 0;
-      r.querySelector('.tc').textContent = (q*c).toFixed(2);
-      r.querySelector('.tr').textContent = (q*p).toFixed(2);
+  // ---------- Generic tables (inv/sales/pay) ----------
+  function rowHtml(type){
+    if(type==='inv'){
+      return `
+        <tr>
+          <td><button class="icon-btn" onclick="deleteRow(this)">✕</button></td>
+          <td><input type="text" placeholder="e.g. Stethoscope"></td>
+          <td><input type="text" placeholder="e.g. Cardio"></td>
+          <td><input type="number" class="qty" min="0" placeholder="0"></td>
+          <td><input type="number" class="cost" min="0" step="0.01" placeholder="0.00"></td>
+          <td><input type="number" class="price" min="0" step="0.01" placeholder="0.00"></td>
+          <td class="computed tc">0.00</td>
+          <td class="computed tr">0.00</td>
+          <td><input type="text" placeholder="notes"></td>
+        </tr>`;
     }
-  });
+    if(type==='sales'){
+      return `
+        <tr>
+          <td><button class="icon-btn" onclick="deleteRow(this)">✕</button></td>
+          <td><input type="date"></td>
+          <td><input type="text"></td>
+          <td>
+            <select>
+              <option>Single</option>
+              <option>Bundle</option>
+            </select>
+          </td>
+          <td><input type="number" min="0" placeholder="0"></td>
+          <td><input type="number" min="0" step="0.01" placeholder="0.00"></td>
+          <td>
+            <select>
+              <option>Cash</option>
+              <option>MoMo</option>
+              <option>Transfer</option>
+            </select>
+          </td>
+          <td><input type="text"></td>
+        </tr>`;
+    }
+    if(type==='pay'){
+      return `
+        <tr>
+          <td><button class="icon-btn" onclick="deleteRow(this)">✕</button></td>
+          <td><input type="text"></td>
+          <td><input type="number" min="0" step="0.01" placeholder="0.00"></td>
+          <td><input type="text"></td>
+          <td><input type="text"></td>
+          <td><input type="date"></td>
+          <td>
+            <select>
+              <option>Pending</option>
+              <option>Paid</option>
+              <option>Overdue</option>
+            </select>
+          </td>
+          <td><input type="text"></td>
+        </tr>`;
+    }
+    return `<tr><td><button class="icon-btn" onclick="deleteRow(this)">✕</button></td><td><input type="text"></td></tr>`;
+  }
 
   function addRow(bodyId,type){
     const b = document.getElementById(bodyId);
-
-    if(type==='inv'){
-      b.insertAdjacentHTML('beforeend',
-        `<tr>
-          <td><input type="text"></td>
-          <td><input type="text"></td>
-          <td><input type="number" class="qty" min="0"></td>
-          <td><input type="number" class="cost" min="0" step="0.01"></td>
-          <td><input type="number" class="price" min="0" step="0.01"></td>
-          <td class="computed tc">0.00</td>
-          <td class="computed tr">0.00</td>
-          <td><input type="text"></td>
-        </tr>`
-      );
-    } else if(type==='bun'){
-      b.insertAdjacentHTML('beforeend',
-        `<tr>
-          <td><input type="text"></td>
-          <td><input type="number" min="0" step="0.01"></td>
-          <td><textarea rows="4"></textarea></td>
-          <td><input type="text"></td>
-        </tr>`
-      );
-    } else if(type==='sales'){
-      b.insertAdjacentHTML('beforeend',
-        `<tr>
-          <td><input type="date"></td>
-          <td><input type="text"></td>
-          <td><select><option>Single</option><option>Bundle</option></select></td>
-          <td><input type="number" min="0"></td>
-          <td><input type="number" min="0" step="0.01"></td>
-          <td><select><option>Cash</option><option>MoMo</option><option>Transfer</option></select></td>
-          <td><input type="text"></td>
-        </tr>`
-      );
-    } else if(type==='pay'){
-      b.insertAdjacentHTML('beforeend',
-        `<tr>
-          <td><input type="text"></td>
-          <td><input type="number" min="0" step="0.01"></td>
-          <td><input type="text"></td>
-          <td><input type="text"></td>
-          <td><input type="date"></td>
-          <td><select><option>Pending</option><option>Paid</option><option>Overdue</option></select></td>
-          <td><input type="text"></td>
-        </tr>`
-      );
-    }
+    b.insertAdjacentHTML('beforeend', rowHtml(type));
   }
 
-  // ✅ BEST BEHAVIOR:
-  // - Only submit rows with data
-  // - After submit: clear those rows
-  // - Then ensure 1 blank row exists at bottom
-  async function submitSheet(sheetName, tableId, statusId, bodyId, rowType){
-    const st = document.getElementById(statusId);
-    st.className = 'status loading';
-    st.textContent = '📤 Submitting...';
-
-    const { rows, rowEls } = collectRows(tableId);
-
-    if(rows.length === 0){
-      st.className='status error';
-      st.textContent='⚠️ No new data to submit.';
-      setTimeout(()=>st.style.display='none', 4000);
+  function deleteRow(btn){
+    const tr = btn.closest('tr');
+    const tbody = tr.parentElement;
+    if(tbody.querySelectorAll('tr').length <= 1){
+      showToast("Can't delete the last row.", "error");
       return;
     }
-
-    let iframe = document.querySelector('iframe[name="submission_iframe"]');
-    if(!iframe){
-      iframe = document.createElement('iframe');
-      iframe.name = 'submission_iframe';
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
-    }
-
-    for(let i=0;i<rows.length;i++){
-      const row = rows[i];
-
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = SCRIPT_URL;
-      form.target = 'submission_iframe';
-
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'data';
-      input.value = JSON.stringify({ sheetName, row });
-
-      form.appendChild(input);
-      document.body.appendChild(form);
-      form.submit();
-      document.body.removeChild(form);
-
-      await new Promise(r => setTimeout(r, 350));
-    }
-
-    // ✅ Clear the submitted rows from the UI to prevent duplicates
-    rowEls.forEach(tr => tr.remove());
-
-    // ✅ Ensure at least one blank row exists so the table never becomes empty
-    if(document.getElementById(bodyId).querySelectorAll('tr').length === 0){
-      addRow(bodyId, rowType);
-    }
-
-    st.className='status success';
-    st.textContent=`✅ Submitted ${rows.length} row(s)!`;
-    setTimeout(()=>st.style.display='none', 4000);
+    tr.remove();
   }
+
+  document.addEventListener('input', (e) => {
+    const tr = e.target.closest('tr');
+    if(!tr) return;
+    if(e.target.classList.contains('qty') || e.target.classList.contains('cost') || e.target.classList.contains('price')){
+      const q = parseFloat(tr.querySelector('.qty')?.value) || 0;
+      const c = parseFloat(tr.querySelector('.cost')?.value) || 0;
+      const p = parseFloat(tr.querySelector('.price')?.value) || 0;
+      const tc = tr.querySelector('.tc');
+      const trc = tr.querySelector('.tr');
+      if(tc) tc.textContent = (q*c).toFixed(2);
+      if(trc) trc.textContent = (q*p).toFixed(2);
+    }
+  });
 
   function collectRows(tableId){
     const rows=[];
     const rowEls=[];
-
     document.getElementById(tableId).querySelectorAll('tbody tr').forEach(tr=>{
       const inputs = Array.from(tr.querySelectorAll('input,select,textarea'));
       const values = inputs.map(x => (x.value ?? '').trim());
-
       const meaningful = values.some(v => v !== '' && v !== '0' && v !== '0.00');
       if(!meaningful) return;
 
@@ -416,9 +404,244 @@
       rows.push(row);
       rowEls.push(tr);
     });
-
     return { rows, rowEls };
   }
+
+  async function submitSheet(sheetName, tableId, statusId, submitBtnId){
+    const st = document.getElementById(statusId);
+    const submitBtn = document.getElementById(submitBtnId);
+    submitBtn.disabled = true;
+
+    st.className = 'status loading';
+    st.textContent = '📤 Submitting...';
+
+    const { rows, rowEls } = collectRows(tableId);
+    if(rows.length === 0){
+      st.className='status error';
+      st.textContent='⚠️ No new data to submit.';
+      submitBtn.disabled = false;
+      setTimeout(()=>st.style.display='none', 2000);
+      return;
+    }
+
+    let iframe = document.querySelector('iframe[name="submission_iframe"]');
+    if(!iframe){
+      iframe = document.createElement('iframe');
+      iframe.name = 'submission_iframe';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+    }
+
+    for(let i=0;i<rows.length;i++){
+      postToScript_({ sheetName, row: rows[i] });
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    rowEls.forEach(tr => tr.remove());
+
+    const table = document.getElementById(tableId);
+    const bodyId = table.dataset.body;
+    const rowType = table.dataset.rowtype;
+    const tbody = document.getElementById(bodyId);
+    if(tbody.querySelectorAll('tr').length === 0){
+      addRow(bodyId, rowType);
+    }
+
+    st.className='status success';
+    st.textContent=`✅ Submitted ${rows.length} row(s)!`;
+    showToast(`Submitted ✅ (${rows.length} row${rows.length>1?'s':''})`, 'success');
+
+    submitBtn.disabled = false;
+    setTimeout(()=>st.style.display='none', 2500);
+  }
+
+  function postToScript_(payload){
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = SCRIPT_URL;
+    form.target = 'submission_iframe';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'data';
+    input.value = JSON.stringify(payload);
+
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+  }
+
+  // ---------- Bundles (nested + dynamic items) ----------
+  function uid(){
+    return 'b_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }
+
+  function addBundle(){
+    const id = uid();
+    const tbody = document.getElementById('bundleBody');
+
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr class="bundle-head" data-bundle-id="${id}">
+        <td><button class="icon-btn" onclick="deleteBundle('${id}')">✕</button></td>
+        <td><input type="text" placeholder="e.g. Basic Kit" class="bundle-name"></td>
+        <td><input type="number" min="0" step="0.01" placeholder="0.00" class="bundle-price"></td>
+        <td><input type="text" placeholder="notes" class="bundle-notes"></td>
+        <td>
+          <button class="btn gray" onclick="addBundleItem('${id}')">+ Add Item</button>
+        </td>
+      </tr>
+
+      <tr class="bundle-items-row" data-bundle-id="${id}">
+        <td></td>
+        <td colspan="4">
+          <div class="bundle-items-wrap">
+            <table class="bundle-items-table" data-items-for="${id}">
+              <thead>
+                <tr>
+                  <th style="width:50px">Del</th>
+                  <th>Item</th>
+                  <th style="width:140px">Qty</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+            <div class="small-note" style="margin-top:8px">
+              Tip: add as many items as you want for this bundle.
+            </div>
+          </div>
+        </td>
+      </tr>
+    `);
+
+    // start with one item row
+    addBundleItem(id);
+  }
+
+  function addBundleItem(bundleId){
+    const table = document.querySelector(`table[data-items-for="${bundleId}"] tbody`);
+    table.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td><button class="icon-btn" onclick="deleteBundleItem(this)">✕</button></td>
+        <td><input type="text" placeholder="e.g. Stethoscope"></td>
+        <td><input type="number" min="0" placeholder="1"></td>
+      </tr>
+    `);
+  }
+
+  function deleteBundleItem(btn){
+    const tr = btn.closest('tr');
+    const tbody = tr.parentElement;
+    if(tbody.querySelectorAll('tr').length <= 1){
+      showToast("Bundle must have at least 1 item.", "error");
+      return;
+    }
+    tr.remove();
+  }
+
+  function deleteBundle(bundleId){
+    const head = document.querySelector(`tr.bundle-head[data-bundle-id="${bundleId}"]`);
+    const items = document.querySelector(`tr.bundle-items-row[data-bundle-id="${bundleId}"]`);
+    if(!head || !items) return;
+
+    // prevent deleting last bundle
+    const totalBundles = document.querySelectorAll('tr.bundle-head').length;
+    if(totalBundles <= 1){
+      showToast("Can't delete the last bundle.", "error");
+      return;
+    }
+
+    head.remove();
+    items.remove();
+  }
+
+  function collectBundles(){
+    const bundles = [];
+    document.querySelectorAll('tr.bundle-head').forEach(head=>{
+      const bundleId = head.dataset.bundleId;
+      const name = head.querySelector('.bundle-name').value.trim();
+      const price = head.querySelector('.bundle-price').value.trim();
+      const notes = head.querySelector('.bundle-notes').value.trim();
+
+      const itemRows = [];
+      const itemsTbody = document.querySelector(`table[data-items-for="${bundleId}"] tbody`);
+      itemsTbody.querySelectorAll('tr').forEach(tr=>{
+        const cells = tr.querySelectorAll('td');
+        const item = cells[1].querySelector('input').value.trim();
+        const qty = cells[2].querySelector('input').value.trim();
+        const meaningful = (item !== '') || (qty !== '' && qty !== '0');
+        if(meaningful) itemRows.push({ item, qty });
+      });
+
+      // meaningful if bundle has name/price/notes OR any item meaningful
+      const meaningfulBundle = name !== '' || price !== '' || notes !== '' || itemRows.length > 0;
+      if(!meaningfulBundle) return;
+
+      bundles.push({ bundleId, name, price, notes, items: itemRows });
+    });
+    return bundles;
+  }
+
+  async function submitBundles(statusId, submitBtnId){
+    const st = document.getElementById(statusId);
+    const btn = document.getElementById(submitBtnId);
+
+    btn.disabled = true;
+    st.className = 'status loading';
+    st.textContent = '📤 Submitting bundles...';
+
+    const bundles = collectBundles();
+    if(bundles.length === 0){
+      st.className='status error';
+      st.textContent='⚠️ No new bundle data to submit.';
+      btn.disabled = false;
+      setTimeout(()=>st.style.display='none', 2000);
+      return;
+    }
+
+    // Send:
+    // 1) Bundles Packages sheet (one row per bundle)
+    // 2) Bundle Items sheet (one row per item)
+    let bundleRows = 0;
+    let itemRows = 0;
+
+    for(const b of bundles){
+      // Bundles Packages: Del, BundleName, Price, Notes, BundleID
+      postToScript_({
+        sheetName: "Bundles Packages",
+        row: ["", b.name, b.price, b.notes, b.bundleId]
+      });
+      bundleRows++;
+
+      for(const it of b.items){
+        postToScript_({
+          sheetName: "Bundle Items",
+          row: ["", b.bundleId, it.item, it.qty]
+        });
+        itemRows++;
+      }
+
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    // Clear bundles and reset to 1 bundle
+    document.getElementById('bundleBody').innerHTML = '';
+    addBundle();
+
+    st.className='status success';
+    st.textContent=`✅ Submitted ${bundleRows} bundle(s) + ${itemRows} item row(s)!`;
+    showToast(`Submitted ✅ (${bundleRows} bundles, ${itemRows} items)`, 'success');
+
+    btn.disabled = false;
+    setTimeout(()=>st.style.display='none', 2600);
+  }
+
+  // Init rows
+  addRow('invBody','inv');
+  addRow('salesBody','sales');
+  addRow('payBody','pay');
+  addBundle(); // start with one bundle
 </script>
 </body>
 </html>
