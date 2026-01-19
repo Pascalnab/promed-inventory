@@ -133,8 +133,8 @@
 
 <div id="loginScreen" class="login-screen">
   <div class="login-box">
-    <h1>📊 PROMED</h1>
-    <p>Inventory & Financial Tracker</p>
+    <h1>PROMED</h1>
+    <p>Inventory & Sales Management</p>
     <input type="password" id="loginCode" placeholder="Enter access code">
     <button onclick="doLogin()">Login</button>
     <p id="loginError" class="error"></p>
@@ -143,8 +143,8 @@
 
 <div id="app" class="app">
   <div class="header">
-    <h1>📊 PROMED — Inventory Tracker</h1>
-    <p>Complete inventory management system</p>
+    <h1>PROMED — Tracker</h1>
+    <p>Inventory Management System</p>
     <button class="logout" onclick="openLogoutModal()">Logout</button>
   </div>
 
@@ -186,10 +186,9 @@
 
   <!-- TAB 1 -->
   <div id="tab1" class="tab-content">
-    <h2>🎁 Bundles</h2>
+    <h2>📦 Bundles</h2>
     <p>
-      Create bundles with any number of items.<br>
-      <span class="small-note">Each bundle has its own “Add Item”. Submitting sends bundle + items to Google Sheets.</span>
+      Current bundle options we sell to customers<br>
     </p>
 
     <div class="table-wrap">
@@ -294,7 +293,6 @@
 <div id="toast" class="toast"></div>
 
 <script>
-  // ✅ PUT YOUR WEB APP /exec URL HERE
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw7xmJyX7VFoRMEH-3TaMStvgF2QD4v9dwc8G01CZ01tOKNGF6gccp1Ux6FCjfK_r2hLA/exec";
 
   function showToast(msg, type='success', ms=2500){
