@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>PROMED Inventory Beta</title>
+  <title>PROMED Inventory</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:Arial,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;padding:20px}
@@ -46,7 +46,7 @@
 <div id="loginScreen" class="login-screen">
   <div class="login-box">
     <h1>📊 PROMED</h1>
-    <p>Inventory & Financial Tracker beta</p>
+    <p>Inventory & Financial Tracker</p>
     <input type="password" id="loginCode" placeholder="Enter access code">
     <button onclick="doLogin()">Login</button>
     <p id="loginError" class="error"></p>
@@ -67,6 +67,7 @@
     <button class="tab-btn" onclick="showTab(3)">📋 Payables</button>
   </div>
 
+  <!-- TAB 0 -->
   <div id="tab0" class="tab-content active">
     <h2>📦 Aggregated Inventory</h2>
     <p>Current inventory state</p>
@@ -92,6 +93,7 @@
     <div id="invStatus" class="status"></div>
   </div>
 
+  <!-- TAB 1 -->
   <div id="tab1" class="tab-content">
     <h2>🎁 Bundles</h2>
     <p>Bundle pricing and contents</p>
@@ -115,6 +117,7 @@
     <div id="bunStatus" class="status"></div>
   </div>
 
+  <!-- TAB 2 -->
   <div id="tab2" class="tab-content">
     <h2>💰 Sales</h2>
     <p>Recent sales data</p>
@@ -139,6 +142,7 @@
     <div id="salesStatus" class="status"></div>
   </div>
 
+  <!-- TAB 3 -->
   <div id="tab3" class="tab-content">
     <h2>📋 Payables</h2>
     <p>Outstanding debts</p>
@@ -164,8 +168,12 @@
   </div>
 </div>
 
+<!-- Hidden iframe used for POST submissions (bypasses CORS) -->
+<iframe name="submission_iframe" style="display:none"></iframe>
+
 <script>
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzkp7ALMIHOLn63TZICf4gYaaoMc67D14sYpgKwkE3hxbN5-SsJbSbn4DsRm_9_ly-IcQ/exec";
+  // ✅ PUT YOUR WEB APP /exec URL HERE
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFJMou7P7x4Iy5gzLIpGBO5ifOtoNnUvCzpBjDJ1TwHAvcLbdR3q0efolsXgCQR_7l6A/exec";
 
   function doLogin(){
     const c = document.getElementById('loginCode').value;
@@ -262,11 +270,10 @@
     }
   }
 
-  // ✅ Reliable submit: open a new tab that runs fetch (no CORS because it’s a top-level page)
-  function submitSheet(sheetName, tableId, statusId){
-    const st=document.getElementById(statusId);
-    st.className='status loading';
-    st.textContent='📤 Preparing submission...';
+  async function submitSheet(sheetName, tableId, statusId){
+    const st = document.getElementById(statusId);
+    st.className = 'status loading';
+    st.textContent = '📤 Submitting...';
 
     const rows = collectRows(tableId);
     if(rows.length === 0){
@@ -276,59 +283,40 @@
       return;
     }
 
-    // Create a lightweight submission page in a new tab that can use fetch
-    const payload = { sheetName, rows };
+    // Ensure iframe exists
+    let iframe = document.querySelector('iframe[name="submission_iframe"]');
+    if(!iframe){
+      iframe = document.createElement('iframe');
+      iframe.name = 'submission_iframe';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+    }
 
-    const html = `<!doctype html>
-      <html><head><meta charset="utf-8"><title>Submitting…</title></head>
-      <body style="font-family:Arial;padding:18px">
-        <h3>Submitting ${rows.length} row(s) to "${sheetName}"…</h3>
-        <pre id="log" style="background:#f5f5f5;padding:12px;border-radius:8px;white-space:pre-wrap"></pre>
-        <script>
-          const SCRIPT_URL = ${JSON.stringify(SCRIPT_URL)};
-          const payload = ${JSON.stringify(payload)};
-          const log = (m) => document.getElementById('log').textContent += m + "\\n";
+    for(let i=0;i<rows.length;i++){
+      const row = rows[i];
 
-          async function run(){
-            let ok=0, fail=0;
-            for(let i=0;i<payload.rows.length;i++){
-              const row = payload.rows[i];
-              try{
-                const res = await fetch(SCRIPT_URL, {
-                  method: "POST",
-                  headers: {"Content-Type":"application/json"},
-                  body: JSON.stringify({sheetName: payload.sheetName, row})
-                });
-                const txt = await res.text();
-                log("Row " + (i+1) + ": " + txt);
-                if(res.ok) ok++; else fail++;
-              } catch(e){
-                fail++;
-                log("Row " + (i+1) + " ERROR: " + e);
-              }
-              await new Promise(r=>setTimeout(r, 250));
-            }
-            log("\\nDone. Success=" + ok + " Failed=" + fail);
-          }
-          run();
-        <\/script>
-      </body></html>`;
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = SCRIPT_URL;
+      form.target = 'submission_iframe';
 
-    const blob = new Blob([html], {type:'text/html'});
-    const blobUrl = window.URL.createObjectURL(blob);
-    const w = window.open(blobUrl, '_blank');
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'data';
+      input.value = JSON.stringify({ sheetName, row });
 
-    if(!w){
-      st.className='status error';
-      st.textContent='❌ Popup blocked. Allow popups and try again.';
-      setTimeout(()=>st.style.display='none', 6000);
-      window.URL.revokeObjectURL(blobUrl);
-      return;
+      form.appendChild(input);
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
+
+      // small delay so Apps Script isn't spammed
+      await new Promise(r => setTimeout(r, 350));
     }
 
     st.className='status success';
-    st.textContent='✅ Opened submission tab. It will show success/errors per row.';
-    setTimeout(()=>{ st.style.display='none'; window.URL.revokeObjectURL(blobUrl); }, 6000);
+    st.textContent=`✅ Submitted ${rows.length} row(s)! Check your Google Sheet.`;
+    setTimeout(()=>st.style.display='none', 6000);
   }
 
   function collectRows(tableId){
@@ -340,7 +328,6 @@
         return el ? el.value : td.textContent;
       });
 
-      // Only include if any input has meaningful content
       const inputs = Array.from(tr.querySelectorAll('input,select')).map(x => (x.value ?? '').trim());
       const meaningful = inputs.some(v => v !== '' && v !== '0' && v !== '0.00');
 
