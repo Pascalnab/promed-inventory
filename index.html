@@ -6,6 +6,7 @@
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:Arial,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;padding:20px}
+
     .login-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;z-index:1000}
     .login-box{background:white;padding:40px;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center;max-width:400px;width:90%}
     .login-box h1{color:#667eea;font-size:32px;margin-bottom:8px}
@@ -13,28 +14,49 @@
     .login-box input{width:100%;padding:14px;border:2px solid #e0e0e0;border-radius:8px;font-size:15px;margin-bottom:16px}
     .login-box button{width:100%;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:14px;border-radius:8px;cursor:pointer;font-weight:600;font-size:16px}
     .error{color:#ef4444;font-size:13px;margin-top:10px}
+
     .app{max-width:1400px;margin:0 auto;display:none}
     .header{background:white;padding:25px;border-radius:12px;margin-bottom:20px;box-shadow:0 4px 6px rgba(0,0,0,0.1);position:relative}
     .header h1{color:#667eea;font-size:28px;margin-bottom:8px}
     .header p{color:#666;font-size:14px}
     .logout{position:absolute;top:25px;right:25px;background:#ef4444;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}
+
     .tabs{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
     .tab-btn{background:white;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;color:#666;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
     .tab-btn.active{background:linear-gradient(135deg,#667eea,#764ba2);color:white}
+
     .tab-content{display:none;background:white;border-radius:12px;padding:25px;box-shadow:0 4px 6px rgba(0,0,0,0.1)}
     .tab-content.active{display:block}
     .tab-content h2{color:#333;font-size:22px;margin-bottom:8px}
     .tab-content>p{color:#666;font-size:14px;margin-bottom:20px;padding-bottom:15px;border-bottom:2px solid #f0f0f0}
+
     .table-wrap{overflow-x:auto;margin-bottom:20px}
     table{width:100%;border-collapse:collapse;font-size:13px}
     thead{background:linear-gradient(135deg,#667eea,#764ba2);color:white}
     th{padding:12px;text-align:left;font-weight:600;white-space:nowrap}
     td{padding:10px 12px;border-bottom:1px solid #e0e0e0}
     tbody tr:hover{background:#f8f9ff}
-    input,select{width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px}
+    input,select,textarea{width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px}
+    textarea{resize:vertical}
+
     .computed{background:#f0f9ff;font-weight:600;color:#0284c7}
-    .btn{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px;margin-top:10px}
-    .btn.green{background:#10b981;margin-left:10px}
+
+    .btn{background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-weight:600;font-size:14px}
+    .btn.green{background:#10b981}
+    .btn.red{background:#ef4444}
+
+    /* ✅ Buttons row: Add on left, Submit on far right */
+    .actions{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-top:10px;
+      flex-wrap:wrap;
+    }
+    .actions-left{display:flex;gap:10px;align-items:center}
+    .actions-right{display:flex;gap:10px;align-items:center;margin-left:auto}
+
     .status{margin-top:15px;padding:12px;border-radius:6px;font-size:14px;font-weight:500;display:none;white-space:pre-wrap}
     .status.success{background:#d1fae5;color:#065f46;border:1px solid #10b981;display:block}
     .status.error{background:#fee2e2;color:#991b1b;border:1px solid #ef4444;display:block}
@@ -73,7 +95,9 @@
     <p>Current inventory state</p>
     <div class="table-wrap">
       <table id="invTable">
-        <thead><tr><th>Item</th><th>Category</th><th>Qty</th><th>Cost (₵)</th><th>Price (₵)</th><th>Total Cost</th><th>Total Retail</th><th>Notes</th></tr></thead>
+        <thead>
+          <tr><th>Item</th><th>Category</th><th>Qty</th><th>Cost (₵)</th><th>Price (₵)</th><th>Total Cost</th><th>Total Retail</th><th>Notes</th></tr>
+        </thead>
         <tbody id="invBody">
           <tr>
             <td><input type="text" placeholder="e.g. Stethoscope"></td>
@@ -88,32 +112,57 @@
         </tbody>
       </table>
     </div>
-    <button class="btn" onclick="addRow('invBody','inv')">+ Add</button>
-    <button class="btn green" onclick="submitSheet('Aggregated Inventory','invTable','invStatus')">📤 Submit</button>
+
+    <div class="actions">
+      <div class="actions-left">
+        <button class="btn" onclick="addRow('invBody','inv')">+ Add</button>
+      </div>
+      <div class="actions-right">
+        <button class="btn green" onclick="submitSheet('Aggregated Inventory','invTable','invStatus','invBody','inv')">📤 Submit</button>
+      </div>
+    </div>
+
     <div id="invStatus" class="status"></div>
   </div>
 
   <!-- TAB 1 -->
   <div id="tab1" class="tab-content">
     <h2>🎁 Bundles</h2>
-    <p>Bundle pricing and contents</p>
+    <p>
+      Bundle pricing and contents. In <b>Items</b>, enter one line per item like:<br>
+      <span style="opacity:.8">Stethoscope x1<br>BP machine x1<br>Thermometer x2</span>
+    </p>
+
     <div class="table-wrap">
       <table id="bunTable">
-        <thead><tr><th>Bundle</th><th>Price (₵)</th><th>Item 1</th><th>Qty 1</th><th>Item 2</th><th>Qty 2</th><th>Item 3</th><th>Qty 3</th><th>Notes</th></tr></thead>
+        <thead>
+          <tr>
+            <th>Bundle</th>
+            <th>Price (₵)</th>
+            <th>Items (one per line: Item xQty)</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
         <tbody id="bunBody">
           <tr>
             <td><input type="text" placeholder="e.g. Basic Kit"></td>
             <td><input type="number" min="0" step="0.01" placeholder="0.00"></td>
-            <td><input type="text"></td><td><input type="number" min="0" placeholder="0"></td>
-            <td><input type="text"></td><td><input type="number" min="0" placeholder="0"></td>
-            <td><input type="text"></td><td><input type="number" min="0" placeholder="0"></td>
+            <td><textarea rows="4" placeholder="Stethoscope x1&#10;BP machine x1&#10;Thermometer x2"></textarea></td>
             <td><input type="text"></td>
           </tr>
         </tbody>
       </table>
     </div>
-    <button class="btn" onclick="addRow('bunBody','bun')">+ Add</button>
-    <button class="btn green" onclick="submitSheet('Bundles Packages','bunTable','bunStatus')">📤 Submit</button>
+
+    <div class="actions">
+      <div class="actions-left">
+        <button class="btn" onclick="addRow('bunBody','bun')">+ Add</button>
+      </div>
+      <div class="actions-right">
+        <button class="btn green" onclick="submitSheet('Bundles Packages','bunTable','bunStatus','bunBody','bun')">📤 Submit</button>
+      </div>
+    </div>
+
     <div id="bunStatus" class="status"></div>
   </div>
 
@@ -121,6 +170,7 @@
   <div id="tab2" class="tab-content">
     <h2>💰 Sales</h2>
     <p>Recent sales data</p>
+
     <div class="table-wrap">
       <table id="salesTable">
         <thead><tr><th>Date</th><th>Item</th><th>Type</th><th>Qty</th><th>Price (₵)</th><th>Payment</th><th>Notes</th></tr></thead>
@@ -137,8 +187,16 @@
         </tbody>
       </table>
     </div>
-    <button class="btn" onclick="addRow('salesBody','sales')">+ Add</button>
-    <button class="btn green" onclick="submitSheet('Sales Snapshot','salesTable','salesStatus')">📤 Submit</button>
+
+    <div class="actions">
+      <div class="actions-left">
+        <button class="btn" onclick="addRow('salesBody','sales')">+ Add</button>
+      </div>
+      <div class="actions-right">
+        <button class="btn green" onclick="submitSheet('Sales Snapshot','salesTable','salesStatus','salesBody','sales')">📤 Submit</button>
+      </div>
+    </div>
+
     <div id="salesStatus" class="status"></div>
   </div>
 
@@ -146,6 +204,7 @@
   <div id="tab3" class="tab-content">
     <h2>📋 Payables</h2>
     <p>Outstanding debts</p>
+
     <div class="table-wrap">
       <table id="payTable">
         <thead><tr><th>Creditor</th><th>Amount (₵)</th><th>Reason</th><th>Items</th><th>Due</th><th>Status</th><th>Notes</th></tr></thead>
@@ -162,8 +221,16 @@
         </tbody>
       </table>
     </div>
-    <button class="btn" onclick="addRow('payBody','pay')">+ Add</button>
-    <button class="btn green" onclick="submitSheet('Payables Debts','payTable','payStatus')">📤 Submit</button>
+
+    <div class="actions">
+      <div class="actions-left">
+        <button class="btn" onclick="addRow('payBody','pay')">+ Add</button>
+      </div>
+      <div class="actions-right">
+        <button class="btn green" onclick="submitSheet('Payables Debts','payTable','payStatus','payBody','pay')">📤 Submit</button>
+      </div>
+    </div>
+
     <div id="payStatus" class="status"></div>
   </div>
 </div>
@@ -172,7 +239,7 @@
 <iframe name="submission_iframe" style="display:none"></iframe>
 
 <script>
-  // ✅ PUT YOUR WEB APP /exec URL HERE
+  // ✅ Your Apps Script Web App /exec URL
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFJMou7P7x4Iy5gzLIpGBO5ifOtoNnUvCzpBjDJ1TwHAvcLbdR3q0efolsXgCQR_7l6A/exec";
 
   function doLogin(){
@@ -217,8 +284,9 @@
     }
   });
 
-  function addRow(id,type){
-    const b=document.getElementById(id);
+  function addRow(bodyId,type){
+    const b = document.getElementById(bodyId);
+
     if(type==='inv'){
       b.insertAdjacentHTML('beforeend',
         `<tr>
@@ -237,9 +305,7 @@
         `<tr>
           <td><input type="text"></td>
           <td><input type="number" min="0" step="0.01"></td>
-          <td><input type="text"></td><td><input type="number" min="0"></td>
-          <td><input type="text"></td><td><input type="number" min="0"></td>
-          <td><input type="text"></td><td><input type="number" min="0"></td>
+          <td><textarea rows="4"></textarea></td>
           <td><input type="text"></td>
         </tr>`
       );
@@ -270,20 +336,24 @@
     }
   }
 
-  async function submitSheet(sheetName, tableId, statusId){
+  // ✅ BEST BEHAVIOR:
+  // - Only submit rows with data
+  // - After submit: clear those rows
+  // - Then ensure 1 blank row exists at bottom
+  async function submitSheet(sheetName, tableId, statusId, bodyId, rowType){
     const st = document.getElementById(statusId);
     st.className = 'status loading';
     st.textContent = '📤 Submitting...';
 
-    const rows = collectRows(tableId);
+    const { rows, rowEls } = collectRows(tableId);
+
     if(rows.length === 0){
       st.className='status error';
-      st.textContent='⚠️ No data to submit.';
+      st.textContent='⚠️ No new data to submit.';
       setTimeout(()=>st.style.display='none', 4000);
       return;
     }
 
-    // Ensure iframe exists
     let iframe = document.querySelector('iframe[name="submission_iframe"]');
     if(!iframe){
       iframe = document.createElement('iframe');
@@ -310,30 +380,44 @@
       form.submit();
       document.body.removeChild(form);
 
-      // small delay so Apps Script isn't spammed
       await new Promise(r => setTimeout(r, 350));
     }
 
+    // ✅ Clear the submitted rows from the UI to prevent duplicates
+    rowEls.forEach(tr => tr.remove());
+
+    // ✅ Ensure at least one blank row exists so the table never becomes empty
+    if(document.getElementById(bodyId).querySelectorAll('tr').length === 0){
+      addRow(bodyId, rowType);
+    }
+
     st.className='status success';
-    st.textContent=`✅ Submitted ${rows.length} row(s)! Check your Google Sheet.`;
-    setTimeout(()=>st.style.display='none', 6000);
+    st.textContent=`✅ Submitted ${rows.length} row(s)!`;
+    setTimeout(()=>st.style.display='none', 4000);
   }
 
   function collectRows(tableId){
     const rows=[];
+    const rowEls=[];
+
     document.getElementById(tableId).querySelectorAll('tbody tr').forEach(tr=>{
+      const inputs = Array.from(tr.querySelectorAll('input,select,textarea'));
+      const values = inputs.map(x => (x.value ?? '').trim());
+
+      const meaningful = values.some(v => v !== '' && v !== '0' && v !== '0.00');
+      if(!meaningful) return;
+
       const tds = Array.from(tr.querySelectorAll('td'));
       const row = tds.map(td=>{
-        const el = td.querySelector('input,select');
+        const el = td.querySelector('input,select,textarea');
         return el ? el.value : td.textContent;
       });
 
-      const inputs = Array.from(tr.querySelectorAll('input,select')).map(x => (x.value ?? '').trim());
-      const meaningful = inputs.some(v => v !== '' && v !== '0' && v !== '0.00');
-
-      if(meaningful) rows.push(row);
+      rows.push(row);
+      rowEls.push(tr);
     });
-    return rows;
+
+    return { rows, rowEls };
   }
 </script>
 </body>
