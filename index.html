@@ -611,13 +611,21 @@
 
       const itemRows = [];
       const itemsTbody = document.querySelector(`table[data-items-for="${bundleId}"] tbody`);
-      itemsTbody.querySelectorAll('tr').forEach(tr=>{
-        const cells = tr.querySelectorAll('td');
-        const item = cells[1].querySelector('input').value.trim();
-        const qty = cells[2].querySelector('input').value.trim();
-        const meaningful = (item !== '') || (qty !== '' && qty !== '0');
-        if(meaningful) itemRows.push({ item, qty });
-      });
+      if(itemsTbody){
+        itemsTbody.querySelectorAll('tr').forEach(tr=>{
+          const cells = tr.querySelectorAll('td');
+          if(cells.length >= 3){
+            const itemInput = cells[1].querySelector('input');
+            const qtyInput = cells[2].querySelector('input');
+            if(itemInput && qtyInput){
+              const item = itemInput.value.trim();
+              const qty = qtyInput.value.trim();
+              const meaningful = (item !== '') || (qty !== '' && qty !== '0');
+              if(meaningful) itemRows.push({ item, qty });
+            }
+          }
+        });
+      }
 
       const meaningfulBundle = name !== '' || price !== '' || notes !== '' || itemRows.length > 0;
       if(!meaningfulBundle) return;
